@@ -5,28 +5,17 @@ import { ClaimType, UploadedFile } from '../types';
 import { formatFileSize } from '../utils';
 
 interface Props {
-  claimType: ClaimType;
-  setClaimType: (type: ClaimType) => void;
   files: UploadedFile[];
   setFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
   onFinish: () => void;
 }
 
-const UploadSection: React.FC<Props> = ({ claimType, setClaimType, files, setFiles, onFinish }) => {
+const UploadSection: React.FC<Props> = ({ files, setFiles, onFinish }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   const getRequiredDocs = () => {
-    switch (claimType) {
-      case 'Medical Expense':
-        return ['สำเนาบัตรประชาชน', 'ใบรับรองแพทย์ฉบับจริง', 'ใบเสร็จรับเงินฉบับจริง'];
-      case 'Permanent Disability':
-        return ['สำเนาบัตรประชาชน', 'ใบรับรองแพทย์ระบุความพิการ', 'สำเนาประวัติการรักษาทั้งหมด'];
-      case 'Loss of Life':
-        return ['ใบมรณบัตร', 'สำเนาบัตรประชาชนผู้เสียชีวิต/ผู้รับผลประโยชน์', 'สำเนาทะเบียนบ้าน'];
-      default:
-        return [];
-    }
+    return ['ใบเสร็จรับเงิน', 'ใบรับรองแพทย์', 'สำเนาบัตรประชาชน', 'สมุดบัญชีธนาคาร', 'อื่น ๆ'];
   };
 
   const simulateUpload = (fileName: string, size: number, type: string) => {
@@ -86,19 +75,11 @@ const UploadSection: React.FC<Props> = ({ claimType, setClaimType, files, setFil
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">ประเภทการเคลม</label>
             <div className="space-y-2">
-              {(['Medical Expense', 'Permanent Disability', 'Loss of Life'] as ClaimType[]).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setClaimType(type)}
-                  className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition-all ${
-                    claimType === type 
-                    ? 'border-ttb-orange bg-orange-50 text-ttb-orange font-medium' 
-                    : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                  }`}
-                >
-                  {type === 'Medical Expense' ? 'ค่ารักษาพยาบาล' : type === 'Permanent Disability' ? 'ทุพพลภาพถาวร' : 'เสียชีวิต'}
-                </button>
-              ))}
+              <div
+                className="w-full text-left px-4 py-3 rounded-xl border text-sm border-ttb-orange bg-orange-50 text-ttb-orange font-medium"
+              >
+                ค่ารักษาพยาบาล
+              </div>
             </div>
           </div>
 

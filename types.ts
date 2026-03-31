@@ -1,7 +1,7 @@
 
 export type AccountType = 'บัญชีเงินฝากออมทรัพย์ ทีทีบี ออลล์ฟรี' | 'ทีทีบี เซฟวิ่ง แคร์';
 
-export type ClaimType = 'Medical Expense' | 'Permanent Disability' | 'Loss of Life';
+export type ClaimType = 'Medical Expense';
 
 export interface UserData {
   firstName: string;

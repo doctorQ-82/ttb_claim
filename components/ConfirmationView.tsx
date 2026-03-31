@@ -5,13 +5,12 @@ import { UserData, UploadedFile, ClaimType } from '../types';
 
 interface Props {
   userData: UserData | null;
-  claimType: ClaimType;
   files: UploadedFile[];
   referenceNumber: string;
   onReset: () => void;
 }
 
-const ConfirmationView: React.FC<Props> = ({ userData, claimType, files, referenceNumber, onReset }) => {
+const ConfirmationView: React.FC<Props> = ({ userData, files, referenceNumber, onReset }) => {
   return (
     <div className="max-w-xl mx-auto py-4 text-center">
       <div className="mb-6 inline-flex p-5 bg-green-100 text-green-600 rounded-full">
@@ -38,10 +37,7 @@ const ConfirmationView: React.FC<Props> = ({ userData, claimType, files, referen
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">ประเภทการเคลม</span>
-            <span className="font-medium text-ttb-orange">{
-              claimType === 'Medical Expense' ? 'ค่ารักษาพยาบาล' : 
-              claimType === 'Permanent Disability' ? 'ทุพพลภาพถาวร' : 'เสียชีวิต'
-            }</span>
+            <span className="font-medium text-ttb-orange">ค่ารักษาพยาบาล</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-500">จำนวนเอกสารที่อัปโหลด</span>

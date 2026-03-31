@@ -13,7 +13,6 @@ const App: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [showConsent, setShowConsent] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
-  const [claimType, setClaimType] = useState<ClaimType>('Medical Expense');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [referenceNumber, setReferenceNumber] = useState<string>('');
 
@@ -60,8 +59,6 @@ const App: React.FC = () => {
       case 3:
         return (
           <UploadSection 
-            claimType={claimType}
-            setClaimType={setClaimType}
             files={uploadedFiles}
             setFiles={setUploadedFiles}
             onFinish={handleFinish}
@@ -71,7 +68,6 @@ const App: React.FC = () => {
         return (
           <ConfirmationView 
             userData={userData}
-            claimType={claimType}
             files={uploadedFiles}
             referenceNumber={referenceNumber}
             onReset={() => {
