@@ -5,7 +5,8 @@ import logging
 from pathlib import Path
 from typing import Any
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -25,16 +26,11 @@ class GeminiClient:
         self.config = config
         self.logger = logger
 
-        genai.configure(api_key=config.gemini.api_key)
-
-        self._generation_config = {
-            "temperature": config.gemini.temperature,
-            "max_output_tokens": config.gemini.max_output_tokens,
-            "response_mime_type": config.gemini.response_mime_type,
-        }
-        self._model = genai.GenerativeModel(
-            model_name=config.gemini.model,
-            generation_config=self._generation_config,
+        self._client = genai.Client(api_key=config.gemini.api_key)
+        self._generation_config = types.GenerateContentConfig(
+            temperature=config.gemini.temperature,
+            max_output_tokens=config.gemini.max_output_tokens,
+            response_mime_type=config.gemini.response_mime_type,
         )
 
     def extract_from_pdf(self, pdf_path: Path) -> list[dict[str, Any]]:
@@ -59,20 +55,23 @@ class GeminiClient:
     def _call_api(self, pdf_path: Path) -> list[dict[str, Any]]:
         self.logger.info(f"  → ส่งให้ Gemini: {pdf_path.name}")
 
-        uploaded_file = genai.upload_file(
-            path=str(pdf_path),
-            mime_type="application/pdf",
-            display_name=pdf_path.name,
+        uploaded_file = self._client.files.upload(
+            file=str(pdf_path),
+            config=types.UploadFileConfig(
+                mime_type="application/pdf",
+                display_name=pdf_path.name,
+            ),
         )
 
         try:
-            response = self._model.generate_content(
-                [uploaded_file, self.config.prompt],
-                request_options={"timeout": self.config.processing.request_timeout},
+            response = self._client.models.generate_content(
+                model=self.config.gemini.model,
+                contents=[uploaded_file, self.config.prompt],
+                config=self._generation_config,
             )
         finally:
             try:
-                genai.delete_file(uploaded_file.name)
+                self._client.files.delete(name=uploaded_file.name)
             except Exception as e:
                 self.logger.warning(f"  ⚠ ลบไฟล์อัปโหลดบน Gemini ไม่สำเร็จ: {e}")
 
