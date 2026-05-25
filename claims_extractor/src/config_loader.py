@@ -55,7 +55,8 @@ class AppConfig:
     paths: PathsConfig
     processing: ProcessingConfig
     excel: ExcelConfig
-    prompt: str
+    classification_prompt: str
+    extraction_prompt: str
 
 
 def _resolve_path(base: Path, value: str) -> Path:
@@ -118,9 +119,12 @@ def load_config(config_path: str | Path = "config.yaml") -> AppConfig:
         columns=columns,
     )
 
-    prompt = raw.get("prompt", "").strip()
-    if not prompt:
-        raise RuntimeError("config.yaml ไม่มี prompt — กรุณาตรวจสอบ")
+    classification_prompt = raw.get("classification_prompt", "").strip()
+    extraction_prompt = raw.get("extraction_prompt", raw.get("prompt", "")).strip()
+    if not classification_prompt:
+        raise RuntimeError("config.yaml ไม่มี classification_prompt — กรุณาตรวจสอบ")
+    if not extraction_prompt:
+        raise RuntimeError("config.yaml ไม่มี extraction_prompt — กรุณาตรวจสอบ")
 
     for p in (paths.input_dir, paths.processed_dir, paths.failed_dir,
               paths.output_dir, paths.logs_dir):
@@ -131,5 +135,6 @@ def load_config(config_path: str | Path = "config.yaml") -> AppConfig:
         paths=paths,
         processing=processing,
         excel=excel,
-        prompt=prompt,
+        classification_prompt=classification_prompt,
+        extraction_prompt=extraction_prompt,
     )

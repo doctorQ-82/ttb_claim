@@ -10,13 +10,13 @@ from typing import Any
 from src.config_loader import AppConfig, load_config
 from src.excel_exporter import ExcelExporter
 from src.file_manager import list_pdfs, move_file
-from src.gemini_client import GeminiClient
 from src.logger import setup_logger
+from src.pipeline import ClaimsPipeline
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Health Claims PDF Extractor (Gemini Flash)"
+        description="Health Claims PDF Extractor (Gemini Flash) — Pipeline 6 ขั้นตอน"
     )
     parser.add_argument(
         "--config",
@@ -43,16 +43,11 @@ def parse_args() -> argparse.Namespace:
 
 def process_one(
     pdf_path: Path,
-    client: GeminiClient,
-    config: AppConfig,
+    pipeline: ClaimsPipeline,
     logger,
 ) -> tuple[Path, list[dict[str, Any]] | None, str | None]:
     try:
-        logger.info(f"▶ เริ่มประมวลผล: {pdf_path.name}")
-        records = client.extract_from_pdf(pdf_path)
-        for r in records:
-            r["source_file"] = pdf_path.name
-        logger.info(f"✓ สำเร็จ: {pdf_path.name} — ดึงข้อมูล {len(records)} รายการ")
+        records = pipeline.process_pdf(pdf_path)
         return pdf_path, records, None
     except Exception as e:
         err = f"{type(e).__name__}: {e}"
@@ -64,7 +59,7 @@ def process_one(
 def run(config: AppConfig, args: argparse.Namespace) -> int:
     logger = setup_logger(config.paths.logs_dir)
     logger.info("=" * 60)
-    logger.info("Health Claims PDF Extractor — เริ่มทำงาน")
+    logger.info("Health Claims PDF Extractor — เริ่มทำงาน (Pipeline 6 ขั้นตอน)")
     logger.info("=" * 60)
 
     input_dir = Path(args.input_dir).resolve() if args.input_dir else config.paths.input_dir
@@ -85,7 +80,7 @@ def run(config: AppConfig, args: argparse.Namespace) -> int:
     logger.info(f"พบไฟล์ PDF: {len(pdf_files)} ไฟล์ (จาก {input_dir})")
     logger.info(f"โมเดล Gemini: {config.gemini.model}")
 
-    client = GeminiClient(config, logger)
+    pipeline = ClaimsPipeline(config, logger)
 
     all_records: list[dict[str, Any]] = []
     success_files: list[Path] = []
@@ -93,7 +88,7 @@ def run(config: AppConfig, args: argparse.Namespace) -> int:
 
     if args.single or len(pdf_files) == 1:
         for pdf in pdf_files:
-            path, records, err = process_one(pdf, client, config, logger)
+            path, records, err = process_one(pdf, pipeline, logger)
             if records is not None:
                 all_records.extend(records)
                 success_files.append(path)
@@ -101,10 +96,10 @@ def run(config: AppConfig, args: argparse.Namespace) -> int:
                 failed_files.append((path, err or "unknown"))
     else:
         workers = max(1, min(config.processing.max_workers, len(pdf_files)))
-        logger.info(f"รันแบบขนาน (max_workers={workers})")
+        logger.info(f"รันแบบขนานระดับไฟล์ (max_workers={workers})")
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {
-                pool.submit(process_one, pdf, client, config, logger): pdf
+                pool.submit(process_one, pdf, pipeline, logger): pdf
                 for pdf in pdf_files
             }
             for fut in as_completed(futures):
