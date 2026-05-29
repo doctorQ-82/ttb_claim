@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        // Endpoint that serves the redbook Excel data as JSON. Optional:
+        // when unset, the chatbot falls back to a bundled sample dataset.
+        'process.env.REDBOOK_API_URL': JSON.stringify(env.REDBOOK_API_URL)
       },
       resolve: {
         alias: {

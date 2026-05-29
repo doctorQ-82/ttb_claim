@@ -1,14 +1,18 @@
 
 import React, { useState, useCallback } from 'react';
-import { ShieldCheck, UserCheck, FileText, CheckCircle, ChevronRight, Menu, HelpCircle } from 'lucide-react';
+import { ShieldCheck, UserCheck, FileText, CheckCircle, ChevronRight, Menu, HelpCircle, Car } from 'lucide-react';
 import EntitlementForm from './components/EntitlementForm';
 import ConsentModal from './components/ConsentModal';
 import ResultView from './components/ResultView';
 import UploadSection from './components/UploadSection';
 import ConfirmationView from './components/ConfirmationView';
+import RedbookChatbot from './components/RedbookChatbot';
 import { UserData, UploadedFile, VerificationResult, ClaimType } from './types';
 
+type Tab = 'claims' | 'redbook';
+
 const App: React.FC = () => {
+  const [tab, setTab] = useState<Tab>('claims');
   const [step, setStep] = useState<number>(1);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [showConsent, setShowConsent] = useState<boolean>(false);
@@ -111,6 +115,38 @@ const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-grow max-w-5xl mx-auto w-full px-4 py-8">
+        {/* Tab Navigation */}
+        <div className="mb-8 flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setTab('claims')}
+            className={`px-4 py-3 -mb-px font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${
+              tab === 'claims'
+                ? 'border-ttb-orange text-ttb-blue'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <ShieldCheck size={18} /> ตรวจสอบสิทธิ์และเคลม
+          </button>
+          <button
+            onClick={() => setTab('redbook')}
+            className={`px-4 py-3 -mb-px font-medium text-sm flex items-center gap-2 border-b-2 transition-colors ${
+              tab === 'redbook'
+                ? 'border-ttb-orange text-ttb-blue'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <Car size={18} /> ค้นหาราคากลางรถ (Redbook)
+          </button>
+        </div>
+
+        {tab === 'redbook' ? (
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            <div className="p-6 md:p-8">
+              <RedbookChatbot />
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Step Indicator */}
         <div className="mb-10">
           <div className="flex items-center justify-between relative">
@@ -147,6 +183,8 @@ const App: React.FC = () => {
             {renderStep()}
           </div>
         </div>
+          </>
+        )}
       </main>
 
       {/* Consent Modal Overlay */}
