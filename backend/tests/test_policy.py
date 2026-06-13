@@ -28,7 +28,7 @@ def _auth_header() -> dict[str, str]:
     return {"Authorization": f"Bearer {_get_token()}"}
 
 
-def _payload(quote_id="Q-2026-000123", subclass="PYAY", agent_code="AG12345") -> dict:
+def _payload(quote_id="Q-2026-000123", subclass="PYA", agent_code="AG12345") -> dict:
     return {"quoteId": quote_id, "subclass": subclass, "agentCode": agent_code}
 
 
@@ -61,11 +61,11 @@ def test_book_policy_success():
     assert resp.status_code == 201, resp.text
     body = resp.json()
     assert body["quoteId"] == "Q-2026-000123"
-    assert body["subclass"] == "PYAY"
+    assert body["subclass"] == "PYA"
     assert body["agentCode"] == "AG12345"
     assert body["status"] == "BOOKED"
     yy = datetime.now(timezone.utc).strftime("%y")
-    assert body["policyNo"] == f"001-PYAY{yy}-000001"
+    assert body["policyNo"] == f"001-PYA{yy}-000001"
     assert body["bookedBy"] == "agent01"
 
     receipt = body["receipt"]
@@ -78,13 +78,23 @@ def test_book_policy_success():
 def test_subclass_and_agent_code_normalized():
     resp = client.post(
         "/policies/book",
-        json=_payload(subclass=" life01 ", agent_code=" ag99 "),
+        json=_payload(subclass=" pya ", agent_code=" ag99 "),
         headers=_auth_header(),
     )
     assert resp.status_code == 201, resp.text
     body = resp.json()
-    assert body["subclass"] == "LIFE01"
+    assert body["subclass"] == "PYA"
     assert body["agentCode"] == "AG99"
+
+
+@pytest.mark.parametrize("bad_subclass", ["PY", "PYAY", "PY1", "P1A", "ปยอ"])
+def test_subclass_must_be_three_uppercase_letters(bad_subclass):
+    resp = client.post(
+        "/policies/book",
+        json=_payload(subclass=bad_subclass),
+        headers=_auth_header(),
+    )
+    assert resp.status_code == 422
 
 
 def test_book_is_idempotent_per_quote():
@@ -99,12 +109,12 @@ def test_book_is_idempotent_per_quote():
 def test_book_same_quote_different_subclass_conflict():
     client.post(
         "/policies/book",
-        json=_payload(quote_id="Q-X", subclass="LIFE01"),
+        json=_payload(quote_id="Q-X", subclass="PYA"),
         headers=_auth_header(),
     )
     resp = client.post(
         "/policies/book",
-        json=_payload(quote_id="Q-X", subclass="HEALTH02"),
+        json=_payload(quote_id="Q-X", subclass="HEA"),
         headers=_auth_header(),
     )
     assert resp.status_code == 409
@@ -122,7 +132,7 @@ def test_missing_required_field_rejected():
 def test_get_policy():
     client.post(
         "/policies/book",
-        json=_payload(quote_id="Q-GET", subclass="TELE01"),
+        json=_payload(quote_id="Q-GET", subclass="TEL"),
         headers=_auth_header(),
     )
     resp = client.get("/policies/Q-GET", headers=_auth_header())

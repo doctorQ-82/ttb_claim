@@ -53,33 +53,35 @@ Send `quoteId`, `subclass` and `agentCode`; receive the booked policy.
 curl -X POST http://127.0.0.1:8000/policies/book \
   -H "Authorization: Bearer <JWT>" \
   -H "Content-Type: application/json" \
-  -d '{"quoteId":"Q-2026-000123","subclass":"PYAY","agentCode":"AG12345"}'
+  -d '{"quoteId":"Q-2026-000123","subclass":"PYA","agentCode":"AG12345"}'
 ```
 
 Response:
 
 ```json
 {
-  "policyNo": "001-PYAY26-000001",
+  "policyNo": "001-PYA26-000001",
   "quoteId": "Q-2026-000123",
-  "subclass": "PYAY",
+  "subclass": "PYA",
   "agentCode": "AG12345",
   "status": "BOOKED",
   "bookedAt": "2026-06-13T06:30:00Z",
   "bookedBy": "agent01",
   "receipt": {
     "receiptNo": "RCP-26-000001",
-    "policyNo": "001-PYAY26-000001",
+    "policyNo": "001-PYA26-000001",
     "quoteId": "Q-2026-000123",
     "issuedAt": "2026-06-13T06:30:00Z"
   }
 }
 ```
 
-`subclass` and `agentCode` are trimmed and upper-cased before use.
+`subclass` must be **exactly 3 uppercase English letters** (e.g. `PYA`);
+input is trimmed and upper-cased first, so `pya` is accepted. `agentCode`
+is likewise trimmed and upper-cased.
 
 **Policy number format:** `<prefix>-<SUBCLASS><YY>-<running>` — e.g.
-`001-PYAY26-000001` (prefix `001`, subclass `PYAY`, year `26`, running `000001`).
+`001-PYA26-000001` (prefix `001`, subclass `PYA`, year `26`, running `000001`).
 The prefix is configurable via `POLICY_PREFIX`.
 
 ### Behaviour

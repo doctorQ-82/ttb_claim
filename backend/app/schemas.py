@@ -24,8 +24,8 @@ class BookPolicyRequest(BaseModel):
 
     quote_id: str = Field(..., alias="quoteId", min_length=1, examples=["Q-2026-000123"])
     subclass: str = Field(
-        ..., min_length=1, max_length=20, examples=["LIFE01"],
-        description="Product subclass code the policy is booked under.",
+        ..., pattern=r"^[A-Z]{3}$", examples=["PYA"],
+        description="Product subclass code: exactly 3 uppercase English letters.",
     )
     agent_code: str = Field(
         ..., alias="agentCode", min_length=1, max_length=20, examples=["AG12345"],
@@ -34,10 +34,11 @@ class BookPolicyRequest(BaseModel):
 
     model_config = {"populate_by_name": True}
 
-    @field_validator("subclass", "agent_code")
+    @field_validator("subclass", "agent_code", mode="before")
     @classmethod
-    def _strip_and_upper(cls, value: str) -> str:
-        return value.strip().upper()
+    def _strip_and_upper(cls, value: object) -> object:
+        # Normalize before constraint checks so lowercase input is accepted.
+        return value.strip().upper() if isinstance(value, str) else value
 
 
 class Receipt(BaseModel):
