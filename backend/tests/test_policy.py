@@ -64,8 +64,9 @@ def test_book_policy_success():
     assert body["subclass"] == "PYA"
     assert body["agentCode"] == "AG12345"
     assert body["status"] == "BOOKED"
+    # Policy number uses the product code (PYAY), independent of subclass.
     yy = datetime.now(timezone.utc).strftime("%y")
-    assert body["policyNo"] == f"001-PYA{yy}-000001"
+    assert body["policyNo"] == f"001-PYAY{yy}-000001"
     assert body["bookedBy"] == "agent01"
 
     receipt = body["receipt"]
@@ -85,6 +86,23 @@ def test_subclass_and_agent_code_normalized():
     body = resp.json()
     assert body["subclass"] == "PYA"
     assert body["agentCode"] == "AG99"
+
+
+def test_policy_number_independent_of_subclass():
+    yy = datetime.now(timezone.utc).strftime("%y")
+    r1 = client.post(
+        "/policies/book",
+        json=_payload(quote_id="Q-A", subclass="PYA"),
+        headers=_auth_header(),
+    )
+    r2 = client.post(
+        "/policies/book",
+        json=_payload(quote_id="Q-B", subclass="HEA"),
+        headers=_auth_header(),
+    )
+    # Different subclasses, but both policy numbers use the PYAY product code.
+    assert r1.json()["policyNo"] == f"001-PYAY{yy}-000001"
+    assert r2.json()["policyNo"] == f"001-PYAY{yy}-000002"
 
 
 @pytest.mark.parametrize("bad_subclass", ["PY", "PYAY", "PY1", "P1A", "ปยอ"])

@@ -44,8 +44,11 @@ class PolicyService:
             self._running_no += 1
             now = datetime.now(timezone.utc)
             running = f"{self._running_no:06d}"
-            # Format: <prefix>-<SUBCLASS><YY>-<running>, e.g. 001-PYAY26-000001
-            policy_no = f"{settings.policy_prefix}-{request.subclass}{now:%y}-{running}"
+            # Format: <prefix>-<product_code><YY>-<running>, e.g. 001-PYAY26-000001.
+            # Note: the policy number is independent of the request `subclass`.
+            policy_no = (
+                f"{settings.policy_prefix}-{settings.policy_product_code}{now:%y}-{running}"
+            )
             receipt = Receipt(
                 receipt_no=f"RCP-{now:%y}-{running}",
                 policy_no=policy_no,

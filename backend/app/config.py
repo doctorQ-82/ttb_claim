@@ -20,9 +20,11 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
-    # Prefix (company/branch code) used when generating policy numbers,
-    # e.g. policy "001-PYAY26-000001".
+    # Components used when generating policy numbers, e.g. "001-PYAY26-000001":
+    #   <policy_prefix>-<policy_product_code><YY>-<running>
+    # These are independent of the request's `subclass` field.
     policy_prefix: str = "001"
+    policy_product_code: str = "PYAY"
 
 
 @lru_cache
