@@ -5,16 +5,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 
 from ..config import get_settings
-from ..schemas import BookPolicyRequest, Channel, PolicyResponse
-
-# Short codes embedded in the policy number per channel.
-_CHANNEL_CODE: dict[Channel, str] = {
-    Channel.BRANCH: "BRCH",
-    Channel.AGENT: "AGNT",
-    Channel.ONLINE: "ONLN",
-    Channel.TELESALES: "TELE",
-    Channel.BANCASSURANCE: "BANC",
-}
+from ..schemas import BookPolicyRequest, PolicyResponse
 
 
 class PolicyService:
@@ -31,7 +22,7 @@ class PolicyService:
         self._bookings: dict[str, PolicyResponse] = {}
 
     def book_policy(self, request: BookPolicyRequest, booked_by: str) -> PolicyResponse:
-        """Reserve a policy number for the given quote and channel.
+        """Reserve a policy number for the given quote, subclass and agent.
 
         Booking the same quote twice returns the existing policy (idempotent)
         rather than allocating a new number.
@@ -40,12 +31,12 @@ class PolicyService:
         with self._lock:
             existing = self._bookings.get(request.quote_id)
             if existing is not None:
-                if existing.channel != request.channel:
+                if existing.subclass != request.subclass:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
                         detail=(
-                            f"Quote {request.quote_id} already booked on channel "
-                            f"{existing.channel.value}"
+                            f"Quote {request.quote_id} already booked under subclass "
+                            f"{existing.subclass}"
                         ),
                     )
                 return existing
@@ -53,13 +44,14 @@ class PolicyService:
             self._running_no += 1
             now = datetime.now(timezone.utc)
             policy_no = (
-                f"{settings.policy_prefix}-{_CHANNEL_CODE[request.channel]}-"
+                f"{settings.policy_prefix}-{request.subclass}-"
                 f"{now:%Y%m%d}-{self._running_no:06d}"
             )
             policy = PolicyResponse(
                 policy_no=policy_no,
                 quote_id=request.quote_id,
-                channel=request.channel,
+                subclass=request.subclass,
+                agent_code=request.agent_code,
                 status="BOOKED",
                 booked_at=now,
                 booked_by=booked_by,

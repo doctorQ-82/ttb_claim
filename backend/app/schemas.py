@@ -1,18 +1,7 @@
 """Pydantic request/response models for the API."""
 from datetime import datetime
-from enum import Enum
 
-from pydantic import BaseModel, Field
-
-
-class Channel(str, Enum):
-    """Sales / distribution channel that requests the policy number."""
-
-    BRANCH = "BRANCH"
-    AGENT = "AGENT"
-    ONLINE = "ONLINE"
-    TELESALES = "TELESALES"
-    BANCASSURANCE = "BANCASSURANCE"
+from pydantic import BaseModel, Field, field_validator
 
 
 class Token(BaseModel):
@@ -34,17 +23,30 @@ class BookPolicyRequest(BaseModel):
     """Request to book (reserve) a policy number for a given quote."""
 
     quote_id: str = Field(..., alias="quoteId", min_length=1, examples=["Q-2026-000123"])
-    channel: Channel = Field(..., examples=[Channel.BANCASSURANCE])
+    subclass: str = Field(
+        ..., min_length=1, max_length=20, examples=["LIFE01"],
+        description="Product subclass code the policy is booked under.",
+    )
+    agent_code: str = Field(
+        ..., alias="agentCode", min_length=1, max_length=20, examples=["AG12345"],
+        description="Code of the agent who books the policy.",
+    )
 
     model_config = {"populate_by_name": True}
+
+    @field_validator("subclass", "agent_code")
+    @classmethod
+    def _strip_and_upper(cls, value: str) -> str:
+        return value.strip().upper()
 
 
 class PolicyResponse(BaseModel):
     """Booked policy returned to the caller."""
 
-    policy_no: str = Field(..., alias="policyNo", examples=["TTB-BANC-20260613-000123"])
+    policy_no: str = Field(..., alias="policyNo", examples=["TTB-LIFE01-20260613-000123"])
     quote_id: str = Field(..., alias="quoteId")
-    channel: Channel
+    subclass: str
+    agent_code: str = Field(..., alias="agentCode")
     status: str = Field(default="BOOKED")
     booked_at: datetime = Field(..., alias="bookedAt")
     booked_by: str = Field(..., alias="bookedBy")

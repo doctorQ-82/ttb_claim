@@ -13,10 +13,10 @@ async def book_policy(
     request: BookPolicyRequest,
     current_user: TokenData = Depends(require_scope("policy:book")),
 ) -> PolicyResponse:
-    """Book (reserve) a policy number for a quote on a given channel.
+    """Book (reserve) a policy number for a quote.
 
-    Send `quoteId` and `channel`; the service returns the booked policy.
-    Idempotent per `quoteId`.
+    Send `quoteId`, `subclass` and `agentCode`; the service returns the
+    booked policy. Idempotent per `quoteId`.
     """
     return policy_service.book_policy(request, booked_by=current_user.username or "unknown")
 

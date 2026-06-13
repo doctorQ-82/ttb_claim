@@ -26,6 +26,10 @@ def _auth_header() -> dict[str, str]:
     return {"Authorization": f"Bearer {_get_token()}"}
 
 
+def _payload(quote_id="Q-2026-000123", subclass="LIFE01", agent_code="AG12345") -> dict:
+    return {"quoteId": quote_id, "subclass": subclass, "agentCode": agent_code}
+
+
 def test_health():
     resp = client.get("/health")
     assert resp.status_code == 200
@@ -46,27 +50,36 @@ def test_login_invalid_credentials():
 
 
 def test_book_requires_auth():
-    resp = client.post("/policies/book", json={"quoteId": "Q-1", "channel": "ONLINE"})
+    resp = client.post("/policies/book", json=_payload())
     assert resp.status_code == 401
 
 
 def test_book_policy_success():
+    resp = client.post("/policies/book", json=_payload(), headers=_auth_header())
+    assert resp.status_code == 201, resp.text
+    body = resp.json()
+    assert body["quoteId"] == "Q-2026-000123"
+    assert body["subclass"] == "LIFE01"
+    assert body["agentCode"] == "AG12345"
+    assert body["status"] == "BOOKED"
+    assert body["policyNo"].startswith("TTB-LIFE01-")
+    assert body["bookedBy"] == "agent01"
+
+
+def test_subclass_and_agent_code_normalized():
     resp = client.post(
         "/policies/book",
-        json={"quoteId": "Q-2026-000123", "channel": "BANCASSURANCE"},
+        json=_payload(subclass=" life01 ", agent_code=" ag99 "),
         headers=_auth_header(),
     )
     assert resp.status_code == 201, resp.text
     body = resp.json()
-    assert body["quoteId"] == "Q-2026-000123"
-    assert body["channel"] == "BANCASSURANCE"
-    assert body["status"] == "BOOKED"
-    assert body["policyNo"].startswith("TTB-BANC-")
-    assert body["bookedBy"] == "agent01"
+    assert body["subclass"] == "LIFE01"
+    assert body["agentCode"] == "AG99"
 
 
 def test_book_is_idempotent_per_quote():
-    payload = {"quoteId": "Q-SAME", "channel": "ONLINE"}
+    payload = _payload(quote_id="Q-SAME")
     first = client.post("/policies/book", json=payload, headers=_auth_header())
     second = client.post("/policies/book", json=payload, headers=_auth_header())
     assert first.status_code == 201
@@ -74,20 +87,24 @@ def test_book_is_idempotent_per_quote():
     assert first.json()["policyNo"] == second.json()["policyNo"]
 
 
-def test_book_same_quote_different_channel_conflict():
-    client.post("/policies/book", json={"quoteId": "Q-X", "channel": "ONLINE"}, headers=_auth_header())
+def test_book_same_quote_different_subclass_conflict():
+    client.post(
+        "/policies/book",
+        json=_payload(quote_id="Q-X", subclass="LIFE01"),
+        headers=_auth_header(),
+    )
     resp = client.post(
         "/policies/book",
-        json={"quoteId": "Q-X", "channel": "AGENT"},
+        json=_payload(quote_id="Q-X", subclass="HEALTH02"),
         headers=_auth_header(),
     )
     assert resp.status_code == 409
 
 
-def test_invalid_channel_rejected():
+def test_missing_required_field_rejected():
     resp = client.post(
         "/policies/book",
-        json={"quoteId": "Q-1", "channel": "CARRIER_PIGEON"},
+        json={"quoteId": "Q-1", "subclass": "LIFE01"},  # agentCode missing
         headers=_auth_header(),
     )
     assert resp.status_code == 422
@@ -96,7 +113,7 @@ def test_invalid_channel_rejected():
 def test_get_policy():
     client.post(
         "/policies/book",
-        json={"quoteId": "Q-GET", "channel": "TELESALES"},
+        json=_payload(quote_id="Q-GET", subclass="TELE01"),
         headers=_auth_header(),
     )
     resp = client.get("/policies/Q-GET", headers=_auth_header())
