@@ -20,8 +20,9 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
-    # Prefix used when generating policy numbers
-    policy_prefix: str = "TTB"
+    # Prefix (company/branch code) used when generating policy numbers,
+    # e.g. policy "001-PYAY26-000001".
+    policy_prefix: str = "001"
 
 
 @lru_cache

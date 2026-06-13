@@ -40,6 +40,17 @@ class BookPolicyRequest(BaseModel):
         return value.strip().upper()
 
 
+class Receipt(BaseModel):
+    """Booking receipt issued together with the policy."""
+
+    receipt_no: str = Field(..., alias="receiptNo", examples=["RCP-20260613-000123"])
+    policy_no: str = Field(..., alias="policyNo")
+    quote_id: str = Field(..., alias="quoteId")
+    issued_at: datetime = Field(..., alias="issuedAt")
+
+    model_config = {"populate_by_name": True}
+
+
 class PolicyResponse(BaseModel):
     """Booked policy returned to the caller."""
 
@@ -50,5 +61,6 @@ class PolicyResponse(BaseModel):
     status: str = Field(default="BOOKED")
     booked_at: datetime = Field(..., alias="bookedAt")
     booked_by: str = Field(..., alias="bookedBy")
+    receipt: Receipt
 
     model_config = {"populate_by_name": True}

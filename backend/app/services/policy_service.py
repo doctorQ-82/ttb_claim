@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 
 from ..config import get_settings
-from ..schemas import BookPolicyRequest, PolicyResponse
+from ..schemas import BookPolicyRequest, PolicyResponse, Receipt
 
 
 class PolicyService:
@@ -43,9 +43,14 @@ class PolicyService:
 
             self._running_no += 1
             now = datetime.now(timezone.utc)
-            policy_no = (
-                f"{settings.policy_prefix}-{request.subclass}-"
-                f"{now:%Y%m%d}-{self._running_no:06d}"
+            running = f"{self._running_no:06d}"
+            # Format: <prefix>-<SUBCLASS><YY>-<running>, e.g. 001-PYAY26-000001
+            policy_no = f"{settings.policy_prefix}-{request.subclass}{now:%y}-{running}"
+            receipt = Receipt(
+                receipt_no=f"RCP-{now:%y}-{running}",
+                policy_no=policy_no,
+                quote_id=request.quote_id,
+                issued_at=now,
             )
             policy = PolicyResponse(
                 policy_no=policy_no,
@@ -55,6 +60,7 @@ class PolicyService:
                 status="BOOKED",
                 booked_at=now,
                 booked_by=booked_by,
+                receipt=receipt,
             )
             self._bookings[request.quote_id] = policy
             return policy

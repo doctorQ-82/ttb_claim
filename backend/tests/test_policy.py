@@ -1,4 +1,6 @@
 """End-to-end tests for auth + policy booking."""
+from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -26,7 +28,7 @@ def _auth_header() -> dict[str, str]:
     return {"Authorization": f"Bearer {_get_token()}"}
 
 
-def _payload(quote_id="Q-2026-000123", subclass="LIFE01", agent_code="AG12345") -> dict:
+def _payload(quote_id="Q-2026-000123", subclass="PYAY", agent_code="AG12345") -> dict:
     return {"quoteId": quote_id, "subclass": subclass, "agentCode": agent_code}
 
 
@@ -59,11 +61,18 @@ def test_book_policy_success():
     assert resp.status_code == 201, resp.text
     body = resp.json()
     assert body["quoteId"] == "Q-2026-000123"
-    assert body["subclass"] == "LIFE01"
+    assert body["subclass"] == "PYAY"
     assert body["agentCode"] == "AG12345"
     assert body["status"] == "BOOKED"
-    assert body["policyNo"].startswith("TTB-LIFE01-")
+    yy = datetime.now(timezone.utc).strftime("%y")
+    assert body["policyNo"] == f"001-PYAY{yy}-000001"
     assert body["bookedBy"] == "agent01"
+
+    receipt = body["receipt"]
+    assert receipt["receiptNo"].startswith("RCP-")
+    assert receipt["policyNo"] == body["policyNo"]
+    assert receipt["quoteId"] == "Q-2026-000123"
+    assert receipt["issuedAt"]
 
 
 def test_subclass_and_agent_code_normalized():

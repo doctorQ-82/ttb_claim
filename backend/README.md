@@ -53,24 +53,34 @@ Send `quoteId`, `subclass` and `agentCode`; receive the booked policy.
 curl -X POST http://127.0.0.1:8000/policies/book \
   -H "Authorization: Bearer <JWT>" \
   -H "Content-Type: application/json" \
-  -d '{"quoteId":"Q-2026-000123","subclass":"LIFE01","agentCode":"AG12345"}'
+  -d '{"quoteId":"Q-2026-000123","subclass":"PYAY","agentCode":"AG12345"}'
 ```
 
 Response:
 
 ```json
 {
-  "policyNo": "TTB-LIFE01-20260613-000001",
+  "policyNo": "001-PYAY26-000001",
   "quoteId": "Q-2026-000123",
-  "subclass": "LIFE01",
+  "subclass": "PYAY",
   "agentCode": "AG12345",
   "status": "BOOKED",
   "bookedAt": "2026-06-13T06:30:00Z",
-  "bookedBy": "agent01"
+  "bookedBy": "agent01",
+  "receipt": {
+    "receiptNo": "RCP-26-000001",
+    "policyNo": "001-PYAY26-000001",
+    "quoteId": "Q-2026-000123",
+    "issuedAt": "2026-06-13T06:30:00Z"
+  }
 }
 ```
 
 `subclass` and `agentCode` are trimmed and upper-cased before use.
+
+**Policy number format:** `<prefix>-<SUBCLASS><YY>-<running>` — e.g.
+`001-PYAY26-000001` (prefix `001`, subclass `PYAY`, year `26`, running `000001`).
+The prefix is configurable via `POLICY_PREFIX`.
 
 ### Behaviour
 - **Idempotent per `quoteId`** — re-booking the same quote returns the same policy.
